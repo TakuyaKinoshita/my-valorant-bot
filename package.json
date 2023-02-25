@@ -1,0 +1,28 @@
+{
+ "//1": "Mafi Chat Server Groupsが作成しました",
+ "//2": "基本のBotリポジトリです",
+ "//3": "discord.js v12を使用しています",
+ "name": "my-valorant-bot",
+ "version": "1.1.0",
+ "description": "Discord Valorant API BOT",
+ "main": "server.js",
+ "scripts": {
+  "start": "node server.js"
+ },
+ "dependencies": {
+  "@napi-rs/canvas": "^0.1.36",
+  "axios": "^1.3.4",
+  "discord.js": "^14.7.1",
+  "express": "^4.17.1",
+  "path2d-polyfill": "^2.0.1",
+  "querystring": "^0.2.1",
+  "undici": "^5.20.0",
+  "unofficial-valorant-api": "^2.3.0-stable.0"
+ },
+ "license": "MIT",
+ "keywords": [
+  "node",
+  "discord",
+  "bot"
+ ]
+}
