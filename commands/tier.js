@@ -118,101 +118,144 @@ module.exports = {
         return interaction.editReply({
           content: `Error ${mmr_data.status}: \n\`\`\`${JSON.stringify(mmr_data.error)}\`\`\``,
         });
-      
-      const applyText = (canvas, text) => {
-      	const context = canvas.getContext('2d');
-      	// Declare a base size of the font
-      	let fontSize = 70;
-      	do {
-      		// Assign the font to the context and decrement it so it can be measured again
-      		context.font = `400 ${fontSize -= 5}px Tungsten-Bold`;
-      		// Compare pixel width of the text to the canvas minus the approximate avatar size
-      	} while (context.measureText(text).width > canvas.width - 300);
-      	// Return the result to use in the actual canvas
-      	return context.font;
-      };
-
-      // Pass the entire Canvas object because you'll need access to its width and context
-      let canvasSizeX;
-      let canvasSizeY;
-      let background;
-
-      // create canvas by orientation
-      if (interaction.options.getString('orientation') === 'vertical') {
-        canvasSizeX = 268;
-        canvasSizeY = 640;
-        background = await Canvas.loadImage(`${account_data.data.card.large}`);
-      } else if (interaction.options.getString('orientation') === 'horizontal') {
-        canvasSizeX = 452;
-        canvasSizeY = 128;
-        background = await Canvas.loadImage(`${account_data.data.card.wide}`);
-      }
-      const canvas = Canvas.createCanvas(canvasSizeX, canvasSizeY);
-      const context = canvas.getContext('2d');
-      context.drawImage(background, 0, 0, canvas.width, canvas.height);
-
-      // begin canvas path
-      context.strokeRect(0, 0, canvas.width, canvas.height);
-      context.beginPath();
-      
-      // Transform the image into a circle
-      if (interaction.options.getString('orientation') === 'vertical') {
-        context.arc(70, 70, 40, 0, Math.PI * 2, true);
-      } else if (interaction.options.getString('orientation') === 'horizontal') {
-        context.arc(65, 65, 40, 0, Math.PI * 2, true);
-      }
-
-      //　Generate text output area
-      context.fillStyle = "rgba(81,82,84,0.7)";
-      if (interaction.options.getString('orientation') === 'vertical') {
-        context.rect(50, 50, 75, 50);
-        context.fillRect(50, 50, 75, 50);
-      } else if (interaction.options.getString('orientation') === 'horizontal') {
-        context.rect(130, 14, 300, 100);
-        context.fillRect(130, 14, 300, 100);
-      }
-      context.clip();
-
-      // close canvas path
-      context.closePath();
-      context.stroke();
-
-      // get Discord avatar image url
-      const { body } = await request(interaction.user.displayAvatarURL({ extension: 'jpg' }));
-      const avatar = await Canvas.loadImage(await body.arrayBuffer());
-
-      // set avatar image
-      if (interaction.options.getString('orientation') === 'vertical') {
-        context.drawImage(avatar, 30, 30, 80, 80);
-      } else if (interaction.options.getString('orientation') === 'horizontal') {
-        context.drawImage(avatar, 25, 25, 80, 80);
-      }
 
       // get competitive image url
       // https://qiita.com/kerupani129/items/64ce1e80eb8efb4c2b21
-      const tier_image = await Canvas.loadImage(`${competitivetiers_data.data.data.slice(-1)[0].tiers[mmr_data.data.currenttier].smallIcon}`);
+      const tier_image = await Canvas.loadImage(`${competitivetiers_data.data.data.slice(-1)[0].tiers[mmr_data.data.currenttier].largeIcon}`);
       const tier_text = mmr_data.data.currenttierpatched;
+      
+      const applyText = (canvas, text, maxWidth = canvas.width, base = 70) => {
+      	const context = canvas.getContext('2d');
+      	// Declare a base size of the font
+      	let fontSize = base;
+      	do {
+      		// Assign the font to the context and decrement it so it can be measured again
+      		context.font = `${fontSize -= 1}px`;
+      		// Compare pixel width of the text to the canvas minus the approximate avatar size
+      	} while (context.measureText(text).width > maxWidth);
+      	// Return the result to use in the actual canvas
+      	return fontSize;
+      };
 
-      // set competitive image
+      // canvasの基本設定
+      let x = 0;    //左上の頂点x座標
+      let y = 0;    //左上の頂点y座標
+      let w;        //横の長さ
+      let h;  //縦の長さ
+      let r　= 19;   //角丸の半径
+      // let strokeStyleColor = "rgba(236,232,225,1)";  //塗りつぶし色
+      let strokeStyleColor = "rgb(255, 70, 85)";  //塗りつぶし色
+      let textAreaFillColor = "rgba(81,82,84,0.5)";  //塗りつぶし色
+      let background;　　// 背景バナー画像
+
       if (interaction.options.getString('orientation') === 'vertical') {
-        context.drawImage(tier_image, 30, 30, 80, 80);
+        w = 268;
+        h = 640;
+        background = await Canvas.loadImage(`${account_data.data.card.large}`);
+        return interaction.editReply({ content: "準備中です！" });
       } else if (interaction.options.getString('orientation') === 'horizontal') {
-        context.drawImage(tier_image, 140, 14, 50, 50);
+        w = 452;
+        h = 128;
+        background = await Canvas.loadImage(`${account_data.data.card.wide}`);
+        const canvas = Canvas.createCanvas(w, h);
+        const context = canvas.getContext('2d');
+        
+        // begin canvas path
+        context.clearRect(0,0,canvas.width,canvas.height);
+        context.lineWidth = 3;
+        context.strokeStyle = strokeStyleColor;
+        context.fillStyle = "rgba(255,255,255,0.1)";
+        context.moveTo(x+r, y);
+        context.lineTo(w-r,y);
+        context.arcTo(w,y,w,y+r,r);
+        context.lineTo(w,h-r);
+        context.arcTo(w,h,w-r,h,r);
+        context.lineTo(x+r,h);
+        context.arcTo(x,h,x,h-r,r);
+        context.lineTo(x,y+r)
+        context.arcTo(x,y,x+r,y,r);
+        context.fill();
+        context.stroke();
+
+        // draw background image
+        context.drawImage(background, 0, 0, canvas.width, canvas.height);
+
+        // draw text area background
+        context.beginPath();
+        context.fillStyle = textAreaFillColor;
+        context.moveTo(200,h/2);
+        context.lineTo(150,h);
+        context.lineTo(w,h);
+        context.lineTo(w,h/2);
+        context.lineTo(250,h/2);
+        context.closePath();
+        context.fill();
+
+        // draw line
+        context.beginPath();
+        context.fillStyle = "#0f1923";
+        context.moveTo(x,h/6*5);
+        context.lineTo(w,h/6*5);
+        context.lineTo(w,h);
+        context.lineTo(x,h);
+        context.lineTo(x,h/6*5);
+        context.closePath();
+        context.fill();
+        
+        // draw avatar image background
+        context.beginPath();
+        context.fillStyle = "rgba(255, 70, 85)";
+        context.lineTo(130,y);
+        context.lineTo(70,h);
+        context.lineTo(x,h);
+        context.lineTo(x,y);
+        context.closePath();
+        context.fill();
+
+        let base = 20;
+        context.beginPath();
+        context.fillStyle = "#0f1923";
+        context.lineTo(base,y);
+        context.lineTo(base-50,h);
+        context.lineTo(-50-base,h);
+        context.lineTo(x,y);
+        context.closePath();
+        context.fill();
+        
+        // set avatar image
+        context.drawImage(tier_image, 13, 45, 60, 60);
+        
+        // set competitive tier text
+        let tierSize = applyText(canvas, `${tier_text.toUpperCase()}`, 150)
+        context.textAlign = 'left';
+        context.textBaseline = 'middle';
+      	context.font = `400 ${tierSize}px Tungsten-Bold`;
+      	context.fillStyle = '#ece8e1';
+        let tierWidth = context.measureText(`${tier_text.toUpperCase()}`).width;
+      	context.fillText(`${tier_text.toUpperCase()}`, 13, 45/2);
+        
+        // set player name with tag
+        let text = `${interaction.options.getString('name')}#${interaction.options.getString('tag')}`;
+        let size = applyText(canvas, text, w-80, 50);
+        context.font = `400 ${size} Tungsten-Bold`;
+        context.textAlign = 'left';
+        context.textBaseline = 'middle';
+  	    context.fillStyle = "rgba(255, 70, 85)";
+        let textWidth = context.measureText(`${interaction.options.getString('name')}`).width;
+        context.fillText(`${interaction.options.getString('name')}`, 200, 90);
+        context.fillStyle = '#ece8e1';
+        context.textAlign = 'left';
+        context.textBaseline = 'middle';
+        context.font = `400 ${size - 2}px Tungsten-Bold`;
+        context.fillText(`#${interaction.options.getString('tag')}`, 200+textWidth, 90);
+        
+        // Reply image data
+        const attachment = new AttachmentBuilder(await canvas.encode('png'), { name: 'valorant-profile.png' });
+        return interaction.editReply({ files: [attachment] });
       }
 
-      // set competitive tier text
-    	context.font = '400 42px Tungsten-Bold,arial,georgia,sans-serif';
-    	context.fillStyle = '#ffffff';
-    	context.fillText(`${tier_text}`, 200, 56);
 
-      // set player name with tag
-      context.font = applyText(canvas, `${interaction.options.getString('name')}#${interaction.options.getString('tag')}`);
-	    context.fillStyle = '#ffffff';
-      context.fillText(`${interaction.options.getString('name')}#${interaction.options.getString('tag')}`, 200, 98);
       
-      // Reply image data
-      const attachment = new AttachmentBuilder(await canvas.encode('png'), { name: 'valorant-profile.png' });
-      return interaction.editReply({ files: [attachment] });
     } else {
       return interaction.reply({ content: `どしたん！！そんなコマンドないで？！` });
     }
